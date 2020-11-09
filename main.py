@@ -1,3 +1,5 @@
+#!/bin/python3
+
 import argparse
 import sys
 
@@ -22,12 +24,15 @@ def main():
     parser.add_argument("--operation", "-o", dest="operation", type=str, required=True, choices=OPS, help="Operation to execute")
     args = parser.parse_args()
     automaton1 = Automaton(from_file=args.automaton1)
-    check_errors(automaton1)
+    check_errors(automaton1.errors)
     if args.operation != "kleene_star":
         automaton2 = None
         if args.automaton2:
             automaton2 = Automaton(from_file=args.automaton2)
-        check_errors(automaton2)
+        else:
+            print("Need to define --automaton2")
+            sys.exit(1)
+        check_errors(automaton2.errors)
         result = getattr(operations, args.operation)(automaton1, automaton2)
     else:
         result = operations.kleene_star(automaton1)
