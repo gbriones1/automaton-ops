@@ -1,16 +1,20 @@
 import enum
 
+EPSILON_SYMBOL = "$"
 class Transition():
 
-    def __init__(self, dest: str, target: list=[], symbol: list=[]):
-        self.dest = dest
+    def __init__(self, origin: str, target: str, symbol: str):
+        self.origin = origin
         self.target = target
         self.symbol = symbol
 
     def render(self):
-        # TODO: Return a string in the format s0:a>s1
-        pass
-        
+        return f"{self.origin}:{self.symbol}>{self.target}"
+
+    def __str__(self):
+        return self.render()
+
+
 class operationID(enum.Enum):
     INVALID = 0
     STATES = 1
@@ -19,23 +23,20 @@ class operationID(enum.Enum):
     ALPHABET = 4
     TRANSITIONS = 5
     
-    
 
 class Automaton():
 
-    def __init__(self, states: list = [], initial: str = "", accept: list = [], alphabet: list = [], transitions: list=[], from_file: str = ""):
+    def __init__(self, from_file):
         self.states = []
         self.initial = ""
         self.accept = []
-        #include "$" (epsilon transition) in alphabet
-        self.alphabet = ['$']
+        self.alphabet = []
         self.transitions = []
         self.is_valid = False
         self.errors = []
-        if from_file:
-            self.initial = ""
-            self._parse_file(from_file)
+        self._parse_file(from_file)
         self.validate()
+        import pdb; pdb.set_trace()
 
     def validate(self):
         # TODO: Validate if automaton is valid, if so, set self.is_valid = True
@@ -44,30 +45,25 @@ class Automaton():
         #"set" help to see if an element is repeated (if lenght is different from the lenght of the set, this means a element is repeated)
         #states repeated, throw an error
         if len(self.states) != len(set(self.states)):
-            raise NotImplementedError
+            self.errors.append("States repeated")
         #initial state is undefined
-        if (self.initial == "" or self.initial not in self.states):
-            raise NotImplementedError
+        if self.initial == "" or self.initial not in self.states:
+            self.errors.append("No initial state")
         #accept state has to exist in states
         for sa in self.accept:
-            if(sa not in self.states):
-                raise NotImplementedError
+            if sa not in self.states:
+                self.errors.append("Invalid initial state")
         #alphabet cannot be repeated
         if len(self.alphabet) != len(set(self.alphabet)):
-            raise NotImplementedError 
+            self.errors.append("Alphabet repeated")
         #validate if states of transitions are valid
         for trans in self.transitions:
-            if (trans.dest not in self.states):
-                print("Invalid destination state")
-                raise NotImplementedError
-            for tar in trans.target:
-                if (tar not in self.states):
-                    print("Invalid target state")
-                    raise NotImplementedError
-            for alpha in trans.symbol:
-                if (alpha not in self.alphabet):
-                    print("Undefined symbol in alphabet: ", alpha)
-                    raise NotImplementedError
+            if trans.origin not in self.states:
+                self.errors.append(f"Transition has invalid origin state {trans.origin}")
+            if trans.target not in self.states:
+                self.errors.append(f"Transition has invalid target state {trans.target}")
+            if trans.symbol != EPSILON_SYMBOL and trans.symbol not in self.alphabet:
+                self.errors.append(f"Transition has undefined symbol in alphabet: {trans.symbol}")
                     
 
     def render(self):
@@ -75,12 +71,11 @@ class Automaton():
         pass
 
     def _parse_file(self, filename):
-        # TODO: Fill attributes accordingly to what was read from file
-            parsingID = operationID.INVALID
-            f = open(filename,"r")
+        parsingID = operationID.INVALID
+        with open(filename, "r") as f:
             for x in f:
                 x = x.strip()
-                if(x[0] == '#'):
+                if x[0] == '#':
                     if(x == '#states'):
                         #Parsing states elements 
                         parsingID = operationID.STATES
@@ -109,7 +104,7 @@ class Automaton():
                         if(self.initial == ""):
                             self.initial = x
                         else:
-                            raise NotImplementedError
+                            self.errors.append("Missing initial state")
                     #Parsing accepting elements
                     elif (parsingID == operationID.ACCEPT):
                         self.accept.append(x)
@@ -120,21 +115,13 @@ class Automaton():
                     elif (parsingID == operationID.TRANSITIONS):
                         try:
                             s = x.split(':')
-                            dest = s[0]
+                            origin = s[0]
                             a = s[1].split('>')
-                            symbol = a[0].split(',')
-                            target = a[1].split(',')
-                            self.transitions.append(Transition(dest,target,symbol))
+                            symbol = a[0]
+                            for target in a[1].split(','):
+                                self.transitions.append(Transition(origin,target,symbol))
                         except:
-                            print("Invalid transition definition")
-                            raise
+                            self.errors.append(f"Invalid transition definition: {x}")
                     else:
-                        print("not implemented")
-                        raise NotImplementedError
-            #print("states",self.states)
-            #print("initial",self.initial)
-            #print("accept",self.accept)
-            #print("alphabet",self.alphabet)
-            #for x in self.transitions:
-                #print("dest ",x.dest," target ",x.target," symbol ",x.symbol)
+                        self.errors.append(f"Parsing section not supported: {x}")
     
