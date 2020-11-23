@@ -58,7 +58,27 @@ def concat(automaton1: Automaton, automaton2: Automaton) -> Automaton:
 
 def kleene_star(automaton1: Automaton) -> Automaton:
     # TODO: Implement this
-    raise NotImplementedError
+    states = set()
+    #create a new initial state
+    newInitial = State("kleen_initial")
+    states.add(newInitial)
+    initial = newInitial.name
+
+    for a1 in automaton1.states:
+        newState = State(a1.name)
+        #print("el estado ",newState.name)
+        if newState.name in automaton1.accept:
+            #print("es de aceptacion", newState.name)
+            newState.add_transition(initial,EPSILON_SYMBOL)
+        for t1 in automaton1._transitions:
+            if t1.origin == a1.name:
+              newState.add_transition(t1.target, t1.symbol)
+             #print("target ",t1.target,"transition", t1.symbol)
+              
+        states.add(newState)
+        
+    newInitial.add_transition(automaton1.initial,EPSILON_SYMBOL)
+    return Automaton(states, initial, automaton1.accept, automaton1.alphabet)
 
 def get_states_cross_product(automaton1: Automaton, automaton2: Automaton) -> set:
     states = set()
