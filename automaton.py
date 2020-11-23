@@ -62,6 +62,7 @@ class Automaton():
         self.alphabet = alphabet
         self._transitions = []
         self.errors = []
+        self._has_epsilon = False
         if from_file:
             self.states = set()
             self.initial = ""
@@ -94,7 +95,8 @@ class Automaton():
                 self.errors.append(f"Transition has undefined symbol in alphabet: {trans.symbol}")
             else:
                 origin.add_transition(target.name, trans.symbol)
-        # TODO: Remove unreachable states
+                if trans.symbol == EPSILON_SYMBOL:
+                    self._has_epsilon = True
         if not self.errors:
             return True
         return False
