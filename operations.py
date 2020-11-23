@@ -1,22 +1,20 @@
 from itertools import product
 
-from automaton import Automaton, State
+from automaton import Automaton, State, EPSILON_SYMBOL
 
 import queue
 
-EPSILON_SYMBOL = "$"
-
 def union(automaton1n: Automaton, automaton2n: Automaton) -> Automaton:
 
-    if is_afd(automaton1n):
+    if automaton1n._has_epsilon or not is_afd(automaton1n):
+        automaton1 = get_dfa_from_nfa(automaton1n)
+    else:
         automaton1 = automaton1n
-    else:
-        automaton1 = get_afd_from_afn(automaton1n)
     
-    if is_afd(automaton2n):
-        automaton2 = automaton2n
+    if automaton2n._has_epsilon or not is_afd(automaton2n):
+        automaton2 = get_dfa_from_nfa(automaton2n)
     else:
-        automaton2 = get_afd_from_afn(automaton2n)
+        automaton2 = automaton2n
 
     states = get_states_cross_product(automaton1, automaton2)
     initial = automaton1.initial + automaton2.initial
@@ -33,15 +31,15 @@ def union(automaton1n: Automaton, automaton2n: Automaton) -> Automaton:
 
 def intersect(automaton1n: Automaton, automaton2n: Automaton) -> Automaton:
 
-    if is_afd(automaton1n):
+    if automaton1n._has_epsilon or not is_afd(automaton1n):
+        automaton1 = get_dfa_from_nfa(automaton1n)      
+    else:
         automaton1 = automaton1n
-    else:
-        automaton1 = get_afd_from_afn(automaton1n)
     
-    if is_afd(automaton2n):
-        automaton2 = automaton2n
+    if automaton2n._has_epsilon or not is_afd(automaton2n):
+        automaton2 = get_dfa_from_nfa(automaton2n)      
     else:
-        automaton2 = get_afd_from_afn(automaton2n)
+        automaton2 = automaton2n
 
     states = get_states_cross_product(automaton1, automaton2)
     initial = automaton1.initial + automaton2.initial
@@ -64,14 +62,13 @@ def kleene_star(automaton1: Automaton) -> Automaton:
 
 def get_states_cross_product(automaton1: Automaton, automaton2: Automaton) -> set:
     states = set()
-    join_set = automaton1.states | automaton2.states
     for s1 in sorted(automaton1.states):
         for s2 in sorted(automaton2.states):         
-            state = State(clean_target(f"{s1.name}{s2.name}", join_set))
+            state = State(f"{s1.name}{s2.name}")
             for trans1 in s1.transitions:
                 for trans2 in s2.transitions:
                     if trans1.symbol == trans2.symbol:
-                        ctarget = clean_target(f"{trans1.target}{trans2.target}", join_set)
+                        ctarget = f"{trans1.target}{trans2.target}"
                         state.add_transition(ctarget, trans1.symbol)
             states.add(state)
     return states
@@ -84,9 +81,7 @@ def is_afd(automaton: Automaton) -> bool:
         for alph in automaton.alphabet:
             found = False
             for trans in s1.transitions:
-                if trans.symbol == EPSILON_SYMBOL:
-                    return False
-                elif trans.symbol == alph:
+                if trans.symbol == alph:
                     found = True
 
             if not found:
@@ -95,47 +90,19 @@ def is_afd(automaton: Automaton) -> bool:
     return True
 
 
-def has_repeated_transitions(automaton: Automaton) -> bool:
-    for s in sorted(automaton.states):
-        if len(s.transitions) != len(automaton.alphabet):
-            print(f"state {s.name} has {len(s.transitions)} and automaton has {len(automaton.alphabet)}")
-            return True
+def get_dfa_from_nfa(automaton: Automaton) -> Automaton:
 
-        for alph in automaton.alphabet:
-            found = False
-            for trans in s.transitions:
-                if trans.symbol == alph:
-                    if not found:
-                        found = True
-                    else:
-                        return True
-                        
-    return False
-
-def has_epsilon(automaton: Automaton) -> Automaton:
-    for trans in automaton._transitions:
-        if trans.symbol == EPSILON_SYMBOL:
-            print("Theres an epsilon")
-            return True
-        
-    return False
-
-def get_afd_from_afn(automaton: Automaton) -> Automaton:
-
-    if has_epsilon(automaton):
+    if automaton._has_epsilon:
         automaton1 = remove_epsilon(automaton)
     else:
         automaton1 = automaton
 
-    if has_repeated_transitions(automaton1):
-        afd = remove_repeated_transitions(automaton1)
+    if is_afd(automaton1):
+        dfa = automaton1     
     else:
-        afd = automaton1
+        dfa = remove_repeated_transitions(automaton1)
 
-    return afd
-
-def take_target(elem):
-    return elem.target
+    return dfa
 
 def clean_target(target: str,alphabet: set) -> str:
 
@@ -153,17 +120,12 @@ def dfs(initial: State, states: set) -> str:
     q1 = queue.Queue()
     node_names = None
 
-#    for st in states:
-#        if initial == st.name:
     q1.put(initial)
-#            break
-        
-#    print(f"Starting dfs")
+
     while not q1.empty():
 
         s = q1.get()
 
-#        print(f"Poping {s.name}")
         if s.worked == False:
             s.worked = True
             if node_names == None:
@@ -174,7 +136,6 @@ def dfs(initial: State, states: set) -> str:
             for trans in s.transitions:
                 if trans.symbol != EPSILON_SYMBOL:
                     continue
-#                print(f"Adding {trans.target}")
                 for st in states:
                     if trans.target == st.name:
                         q1.put(st)
@@ -184,33 +145,27 @@ def dfs(initial: State, states: set) -> str:
     for s in states:
         s.worked = False
 
-    print(f"Nodes reached from {st.name} are {node_names}")
     return node_names
 
 def remove_epsilon(automaton: Automaton) -> Automaton:
 
     cerradura = dict()
     states = set()
-#    return automaton
 
     for s in automaton.states:
         s.worked = False
 
     for s in sorted(automaton.states):
         target = s.name
-        for trans in sorted(s.transitions, key=take_target):
-            if trans.symbol == EPSILON_SYMBOL: #and trans.target not in target:
+        for trans in sorted(s.transitions, key=lambda x: x.target):
+            if trans.symbol == EPSILON_SYMBOL: 
                 target = dfs(s, automaton.states)
-
-#                    target += trans.target
 
         ctarget = clean_target(target, automaton.states)
         prev_target = cerradura.get(s.name, None)
 
         if prev_target == None or len(prev_target) < states:
             cerradura.update({s.name:ctarget})
-
-    print(cerradura)
 
     for s in sorted(automaton.states):
         state = State(s.name)
@@ -221,7 +176,6 @@ def remove_epsilon(automaton: Automaton) -> Automaton:
         ctarget = cerradura.get(state.name)
 
         #Augmented transition
-#        print(f"Adding {ctarget}")
         for alph in automaton.alphabet:
             target = None
             for inner_states in automaton.states:
@@ -237,11 +191,8 @@ def remove_epsilon(automaton: Automaton) -> Automaton:
                         else:
                             target += cerradura.get(trans.target)
 
-            #Not needed put for debugging purposes
             if target != None:
                 new_targets = clean_target(target, automaton.states)
-
-#            print(f"Adding {new_targets} to {state.name} with symbol {alph}")
 
                 for st2 in sorted(automaton.states):
                     if st2.name in new_targets:
@@ -251,21 +202,16 @@ def remove_epsilon(automaton: Automaton) -> Automaton:
 
     result = Automaton(states,automaton.initial,automaton.accept, automaton.alphabet)
 
-#    print("After epsilon removal")
-#    print(result.render())
-
     return result
 
 def get_new_transitions(automaton: Automaton, st: State) -> dict:
     my_dict = {}        
     for original_states in sorted(automaton.states):    
         if original_states.name not in st.name:
-#            print(f"State {original_states.name} not in {st.name}")
             continue
 
         for trans in original_states.transitions:
             prev = my_dict.get(trans.symbol)
-#            print(f"Adding {trans.target} to {st.name} {trans.symbol} prev = {prev}")
             if prev is None:
                 my_dict[trans.symbol] = trans.target
             else:
@@ -282,10 +228,8 @@ def remove_repeated_transitions(automaton: Automaton) -> Automaton:
     for alph in automaton.alphabet:
         state.add_transition("empty", alph)
     states.add(state)
-
     for s in sorted(automaton.states):
         state = State(s.name)
-        print(f"In state {state}")
         for alph in sorted(automaton.alphabet):
             found = False
             duplicated = False
@@ -299,12 +243,8 @@ def remove_repeated_transitions(automaton: Automaton) -> Automaton:
                         duplicated = True
                         target = clean_target(target + trans.target, automaton.states)
 
-            #TODO: Check for the original states instead of len
-            if duplicated and len(target) > len(alph):
-                print(f"Adding State {target}")
+            if duplicated and (State(target) not in automaton.states):
                 states.add(State(target))
-
-            print(f"Adding transition {state.name}:{alph}>{target}")
 
             state.add_transition(target, alph)
         
@@ -314,50 +254,34 @@ def remove_repeated_transitions(automaton: Automaton) -> Automaton:
     #Check for the new states created
     while repeat:
         repeat = False
-#        print(f"Starting repeat loop")
         for st in sorted(states - automaton.states):
-#            print(f"State {st.name}")
             if st.name == "empty" or st.worked:
                continue
             
             st.worked = True
             my_dict = get_new_transitions(automaton, st)
 
-#            print(f"State {st.name} {my_dict}")
             for alph in automaton.alphabet:
-                #new_state = ''.join(sorted(set(my_dict[alph]))
                 new_state = my_dict.get(alph, None)
                 if new_state != None:
                     st.add_transition(new_state, alph)
                     len1 = len(states)
                     states.add(State(new_state))
                     len2 = len(states)
-#                print(f"Adding new state: {new_state}, previous len {len1} after adding {len2}")
                     if len1 < len2:
                         repeat = True
                 else:
                     st.add_transition("empty", alph)
-                    print(f"ERROR: dictionary {my_dict} doesn't have values for key {alph} for state {st.name}")       
+         
+    active_states = remove_unused_states(automaton.initial, states)
 
-            
     accept = set()
     for a in automaton.accept:
-        for ast in states:
+        for ast in active_states:
             if a in ast.name:
                 accept.add(ast.name)
 
-#    print("Original Automaton")
-#    print(automaton.render())
-
-    active_states = remove_unused_states(automaton.initial, states)
-#    active_states = states
-#    print(f"States {states}")
-#    print(f"Active states {active_states}")
-    #Testing:
     result = Automaton(active_states,automaton.initial,accept, automaton.alphabet)
-
-#    print("Removing duplicated transitions")
-    print(result.render())
 
     return result
 
@@ -369,16 +293,12 @@ def bfs(initial: str, states: set):
             queue.append(st)
             break
         
-#    print(f"Starting bfs")
     while len(queue) > 0:
 
         s = queue.pop()
-
-#        print(f"Poping {s.name}")
         if s.worked == False:
             s.worked = True
             for trans in s.transitions:
-#                print(f"Adding {trans.target}")
                 for st in states:
                     if trans.target == st.name:
                         queue.append(st)
@@ -390,13 +310,11 @@ def remove_unused_states(initial: str,states: set) -> set:
     for st in states:
         st.worked = False
 
-#    print("Calling bfs")
     bfs(initial, states)
 
     used_states = set()
 
     for st in states:
-#        print(f"State {st.name} active? {st.worked}")
         if st.worked:
             used_states.add(st)
     
