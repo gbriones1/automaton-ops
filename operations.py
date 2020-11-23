@@ -64,10 +64,7 @@ def kleene_star(automaton1: Automaton) -> Automaton:
     states.add(newInitial)
 
     for a1 in automaton1.states:
-        #newState = State(a1.name)
-        #print("el estado ",newState.name)
         if a1.name in automaton1.accept:
-            #print("es de aceptacion", newState.name)
             a1.add_transition(newInitial.name,EPSILON_SYMBOL)
 
     automaton1.accept.add(newInitial.name)
