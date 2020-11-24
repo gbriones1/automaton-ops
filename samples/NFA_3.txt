@@ -1,0 +1,14 @@
+#states
+R
+S
+#initial
+R
+#accepting
+S
+#alphabet
+a
+b
+#transitions
+R:a>R,S
+R:b>S
+S:a>R
