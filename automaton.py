@@ -119,6 +119,15 @@ class Automaton():
         for state in self.states:
             if len(state.transitions) != len(self.alphabet):
                 self.exec_path = NFA
+            for symbol in self.alphabet:
+                found = False
+                for trans in state.transitions:
+                    if trans.symbol == symbol:
+                        found = True
+                        break
+                if not found:
+                    self.exec_path = NFA
+                    break
         if not self.errors:
             return True
         return False
