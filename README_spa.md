@@ -42,7 +42,7 @@ En su Mac, haga alguna de las siguientes:
 #### Windows
 
  1. Haga clic en el ícono de Windows en la esquina inferior izquierda de su escritorio, o presione la tecla Win en su teclado.
- 2. Escriba cmd o Command Prompt. Después de abrir el menú de inicio, escriba esto en su teclado para buscar las opciones del menú. La aplicación “Command Prompt” aparecera como el primer resultado.
+ 2. Escriba cmd o Command Prompt. Después de abrir el menú de inicio, escriba esto en su teclado para buscar las opciones del menú. La aplicación “Command Prompt” aparecerá como el primer resultado.
  3. Haga clic en la aplicación Command Prompt del menú. Esto abrirá la terminal en una nueva ventana.
 
 #### Linux
@@ -138,3 +138,11 @@ BQ:0>CQ
 La salida de la ejecución será la definición de un autómata que resulte de la operación, este texto puede ser copiado y pegado en el área de texto en http://ivanzuzak.info/noam/webapps/fsm_simulator/ en la sección `① Create automaton` bajo la pestaña `Input automaton`, después cree el grafo haciendo clic en el boton `Create automaton`.
 
 El grafo generado aparecerá en la sección `③ Transition graph` de la misma página.
+
+#### Simule el autómata
+
+Una vez dibujado el grafo del autómata, usted puede simular la ejecución del mismo utilizando una palabra que utilice los símbolos del alfabeto.
+
+En la sección `② Simulate automaton`  se pueden generar palabras aleatorias o alguna de su preferencia, después se da clic en el botón `Start` para empezar la simulación.
+
+Para navegar por la simulación utilice los botones que también se encuentran en esta sección. Mientras navega por la simulación, los colores de los estados en el gráfico del autómata cambiarán, se estará indicando con color gris aquellos estados con los que se encuentra en el camino. Si al terminar de procesar la palabra, alguno de los estados de aceptación se encuentra de color gris, entonces la palabra es aceptada.

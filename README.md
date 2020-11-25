@@ -138,3 +138,11 @@ BQ:0>CQ
 The output of the execution will be the automaton definition resulting from the operation, this text can be copied and pasted into the text box in http://ivanzuzak.info/noam/webapps/fsm_simulator/ in the section `① Create automaton` under the tab `Input automaton`, then create the graph by clicking the `Create automaton` button.
 
 The generated graph will appear in the section: `③ Transition graph` of the same page.
+
+#### Simulate the automaton
+
+Once you have drawn the automaton graph, you can simulate the execution path using a word that contains symbols in the alphabet.
+
+In the section `② Simulate automaton` there are options to generate random words, or if you prefer, you can type a word of your own, after that, click on the `Start` button to start the simulation.
+
+To navigate through the simulation paths, use the navigation buttons located in the same section. While you navigate, the automaton states in the graph will change the color to grey if it is a state found in the path. After finishing word processing, if any of the acceptance states is grey, then the word is accepted.
